@@ -1,5 +1,9 @@
 package rillin.notificaway2;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -11,6 +15,8 @@ import android.view.MenuItem;
 
 public class MainActivity extends AppCompatActivity {
 
+    private NotificationReceiver receiver;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -18,16 +24,33 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        receiver = new NotificationReceiver();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(getString(R.string.MAIN_ACTIVITY));
+        registerReceiver(receiver, filter);
+
+        findViewById(R.id.testClearAllBtn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                commandTheListener(getString(R.string.CLEAR_ALL));
+            }
+        });
+
+        findViewById(R.id.testStatusBtn).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                commandTheListener(getString(R.string.NOTIF_STATUS));
             }
         });
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(receiver);
+    }
+
+    /** autogenned */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -35,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+    /** autogenned */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -48,5 +72,22 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void commandTheListener(String commandValue) {
+        Intent i = new Intent(getString(R.string.NOTIFICAWAY_SERVICE));
+        i.putExtra(getString(R.string.COMMAND), commandValue);
+        sendBroadcast(i);
+    }
+
+    /** Receives message from other app components */
+    class NotificationReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String toDisplay = intent.getStringExtra(getString(R.string.RESULT_DISPLAY));
+            Snackbar.make(findViewById(R.id.toolbar), toDisplay, Snackbar.LENGTH_LONG)
+                .setAction("Action", null)
+                .show();
+        }
     }
 }

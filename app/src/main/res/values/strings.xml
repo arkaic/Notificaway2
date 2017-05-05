@@ -4,8 +4,8 @@
     <string name="notif_listener_service">Notification Listener Service</string>
 
     <!--Intent actions-->
-    <string name="MAIN_ACTIVITY_ACTION">main_activity</string>
-    <string name="NOTIFICAWAY_SERVICE_ACTION">notificaway_service</string>
+    <string name="MAIN_ACTIVITY">main_activity</string>
+    <string name="NOTIFICAWAY_SERVICE">notificaway_service</string>
 
     <!--Intent Key Extras-->
     <string name="COMMAND">command</string>

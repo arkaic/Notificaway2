@@ -3,6 +3,7 @@ package rillin.notificaway2;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.support.v4.app.NotificationManagerCompat;
@@ -20,7 +21,11 @@ public class NotificawayService extends NotificationListenerService {
             // todo prompt user to give notification access to this service
         }
 
-
+        // set up intent broadcast receiving
+        receiver = new NotificawayServiceReceiver();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(getString(R.string.NOTIFICAWAY_SERVICE));
+        registerReceiver(receiver, filter);
     }
 
     @Override
