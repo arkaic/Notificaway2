@@ -2,4 +2,16 @@
     <string name="app_name">Notificaway2</string>
     <string name="action_settings">Settings</string>
     <string name="notif_listener_service">Notification Listener Service</string>
+
+    <!--Intent actions-->
+    <string name="MAIN_ACTIVITY_ACTION">main_activity</string>
+    <string name="NOTIFICAWAY_SERVICE_ACTION">notificaway_service</string>
+
+    <!--Intent Key Extras-->
+    <string name="COMMAND">command</string>
+    <string name="RESULT_DISPLAY">result_display</string>
+
+    <!--Intent Value Extras-->
+    <string name="NOTIF_STATUS">notif_status</string>
+    <string name="CLEAR_ALL">clear_all</string>
 </resources>
