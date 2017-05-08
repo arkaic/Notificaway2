@@ -62,11 +62,11 @@ public class NotificawayService extends NotificationListenerService {
             e.printStackTrace();
         }
 
-        if (notificationsList == null) {
+        if (notificationsList == null)
             notificationsList = new ArrayList<>();
-        }
 
-        notificationsList.add(sbn.getPackageName());
+        if (!notificationsList.contains(sbn.getPackageName()))
+            notificationsList.add(sbn.getPackageName());
 
         try {
             FileOutputStream fos = this.openFileOutput(SAVED_DATA_FILENAME, Context.MODE_PRIVATE);

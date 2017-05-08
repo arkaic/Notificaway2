@@ -44,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
         DATA = getString(R.string.DATA);
         ADD_NOTIFICATION = getString(R.string.ADD_NOTIFICATION);
 
+        // deserialize list from file
         try {
             ObjectInputStream ois = new ObjectInputStream(this.openFileInput(SAVED_DATA_FILENAME));
             mNotificationsList = (List)ois.readObject();
@@ -51,8 +52,9 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (ClassNotFoundException e) { /**/ }
-
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
         mListViewAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, mNotificationsList);
         ListView listView = (ListView)findViewById(android.R.id.list);
         listView.setAdapter(mListViewAdapter);
@@ -67,11 +69,13 @@ public class MainActivity extends AppCompatActivity {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                String packageName = mNotificationsList.get(position - 1);
+                String packageName = mNotificationsList.get(position);
                 Intent launchIntent = getPackageManager().getLaunchIntentForPackage(packageName);
                 if (launchIntent != null) {
                     startActivity(launchIntent);
                 }
+                mNotificationsList.remove(position);
+                mListViewAdapter.notifyDataSetChanged();
             }
         });
         findViewById(R.id.clearAllBtn).setOnClickListener(new View.OnClickListener() {
