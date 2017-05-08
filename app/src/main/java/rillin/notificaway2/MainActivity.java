@@ -24,24 +24,27 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        // set up intent broadcast receiving
         receiver = new NotificationReceiver();
         IntentFilter filter = new IntentFilter();
         filter.addAction(getString(R.string.MAIN_ACTIVITY));
         registerReceiver(receiver, filter);
 
-        findViewById(R.id.testClearAllBtn).setOnClickListener(new View.OnClickListener() {
+        // button event handlers
+        findViewById(R.id.clearAllBtn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 commandTheListener(getString(R.string.CLEAR_ALL));
             }
         });
-
         findViewById(R.id.testStatusBtn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 commandTheListener(getString(R.string.NOTIF_STATUS));
             }
         });
+
+        startService(new Intent(this, NotificawayService.class));
     }
 
     @Override

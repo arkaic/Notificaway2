@@ -13,6 +13,7 @@ import android.support.v4.app.NotificationManagerCompat;
 public class NotificawayService extends NotificationListenerService {
 
     private NotificawayServiceReceiver receiver;
+    private String packageName = this.getClass().getPackage().getName();
 
     @Override
     public void onCreate() {
@@ -36,6 +37,9 @@ public class NotificawayService extends NotificationListenerService {
 
     @Override
     public void onNotificationPosted(StatusBarNotification sbn) {
+        // TODO copy notification data
+        // Note: need to reset Notif access on every build&run
+        this.cancelAllNotifications();
     }
 
     @Override
@@ -43,13 +47,31 @@ public class NotificawayService extends NotificationListenerService {
     }
 
     private boolean hasNotificationAccess() {
-        return NotificationManagerCompat.getEnabledListenerPackages(this).contains(this.getClass().getPackage().getName());
+        return NotificationManagerCompat.getEnabledListenerPackages(this).contains(packageName);
+    }
+
+    private void answerTheCommander(String msg) {
+        Intent i = new Intent(getString(R.string.MAIN_ACTIVITY));
+        i.putExtra(getString(R.string.RESULT_DISPLAY), msg);
+        sendBroadcast(i);
     }
 
     class NotificawayServiceReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-
+            String commandVal = intent.getStringExtra(getString(R.string.COMMAND));
+            if (commandVal.equals(getString(R.string.NOTIF_STATUS))) {
+                String msg;
+                if (!hasNotificationAccess()) {
+                    msg = "Has no notification access";
+                } else {
+                    StatusBarNotification[] notifs = getActiveNotifications();
+                    msg = (notifs == null)
+                        ? "Notifications is null, try re-enabling access to notifications?"
+                        : notifs.length + " notifications";
+                }
+                answerTheCommander(msg);
+            }
         }
     }
 }
