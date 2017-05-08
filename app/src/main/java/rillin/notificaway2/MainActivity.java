@@ -11,6 +11,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -53,7 +54,8 @@ public class MainActivity extends AppCompatActivity {
         } catch (ClassNotFoundException e) { /**/ }
 
         mListViewAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, mNotificationsList);
-        ((ListView)findViewById(android.R.id.list)).setAdapter(mListViewAdapter);
+        ListView listView = (ListView)findViewById(android.R.id.list);
+        listView.setAdapter(mListViewAdapter);
 
         // set up intent broadcast receiving
         mReceiver = new NotificationReceiver();
@@ -61,7 +63,17 @@ public class MainActivity extends AppCompatActivity {
         filter.addAction(getString(R.string.MAIN_ACTIVITY));
         registerReceiver(mReceiver, filter);
 
-        // button event handlers
+        // event handlers
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String packageName = mNotificationsList.get(position - 1);
+                Intent launchIntent = getPackageManager().getLaunchIntentForPackage(packageName);
+                if (launchIntent != null) {
+                    startActivity(launchIntent);
+                }
+            }
+        });
         findViewById(R.id.clearAllBtn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
