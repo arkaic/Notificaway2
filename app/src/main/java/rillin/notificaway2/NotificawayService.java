@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.support.v4.app.NotificationManagerCompat;
@@ -21,7 +22,7 @@ import java.util.List;
 public class NotificawayService extends NotificationListenerService {
 
     private NotificawayServiceReceiver receiver;
-    private String packageName = this.getClass().getPackage().getName();
+    private String mPackageName = this.getClass().getPackage().getName();
 
     private String SAVED_DATA_FILENAME = "saveddata.ser";
 
@@ -49,47 +50,50 @@ public class NotificawayService extends NotificationListenerService {
     public void onNotificationPosted(StatusBarNotification sbn) {
         // TODO copy notification data and add to list
         // Note: need to reset Notif access on every build&run
-
-        List<String> notificationsList = null;
         try {
+            // read file and deserialize list from it
             ObjectInputStream ois = new ObjectInputStream(this.openFileInput(SAVED_DATA_FILENAME));
-            notificationsList = (List)ois.readObject();
+            List<String[]> savedData = (List)ois.readObject();
+            if (savedData == null)
+                savedData = new ArrayList<>();
+
+            PackageManager packageManager= getApplicationContext().getPackageManager();
+            String appName = (String)packageManager.getApplicationLabel(
+                packageManager.getApplicationInfo(sbn.getPackageName(), PackageManager.GET_META_DATA)
+            );
+            String[] dataToAdd = { sbn.getPackageName(), appName };
+            boolean dataExists = false;
+            for (String[] item : savedData) {
+                dataExists = item[0].equals(dataToAdd[0]);
+                if (dataExists)
+                    break;
+            }
+            if (!dataExists)
+                savedData.add(dataToAdd);
+
+            // write back to file
+            FileOutputStream fos = this.openFileOutput(SAVED_DATA_FILENAME, Context.MODE_PRIVATE);
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            oos.writeObject(savedData);
+            oos.close();
+            fos.close();
+
+            // broadcast and clear the notification
+            broadcastToMain(getString(R.string.ADD_NOTIFICATION), sbn.getPackageName());
+            this.cancelNotification(sbn.getKey());
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
-        }
-
-        if (notificationsList == null)
-            notificationsList = new ArrayList<>();
-
-        if (!notificationsList.contains(sbn.getPackageName()))
-            notificationsList.add(sbn.getPackageName());
-
-        try {
-            FileOutputStream fos = this.openFileOutput(SAVED_DATA_FILENAME, Context.MODE_PRIVATE);
-            ObjectOutputStream oos = new ObjectOutputStream(fos);
-            oos.writeObject(notificationsList);
-            oos.close();
-            fos.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
-
-        broadcastToMain(getString(R.string.ADD_NOTIFICATION), sbn.getPackageName());
-        this.cancelAllNotifications();
-    }
-
-    @Override
-    public void onNotificationRemoved(StatusBarNotification sbn) {
     }
 
     private boolean hasNotificationAccess() {
-        return NotificationManagerCompat.getEnabledListenerPackages(this).contains(packageName);
+        return NotificationManagerCompat.getEnabledListenerPackages(this).contains(mPackageName);
     }
 
     private void broadcastToMain(String commandType, String val) {

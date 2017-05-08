@@ -27,7 +27,8 @@ public class MainActivity extends AppCompatActivity {
 
     private NotificationReceiver mReceiver;
     private ArrayAdapter<String> mListViewAdapter;
-    private List<String> mNotificationsList = new ArrayList<>();
+    private List<String[]> mSavedData = new ArrayList<>();
+    private List<String> mAppList = new ArrayList<>();
 
     private String SAVED_DATA_FILENAME = "saveddata.ser";
     private String DATA;
@@ -47,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
         // deserialize list from file
         try {
             ObjectInputStream ois = new ObjectInputStream(this.openFileInput(SAVED_DATA_FILENAME));
-            mNotificationsList = (List)ois.readObject();
+            mSavedData = (List)ois.readObject();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -55,7 +56,11 @@ public class MainActivity extends AppCompatActivity {
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
-        mListViewAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, mNotificationsList);
+        mAppList.clear();
+        for (String[] item : mSavedData) {
+            mAppList.add(item[1]);  // { packageName, appName }
+        }
+        mListViewAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, mAppList);
         ListView listView = (ListView)findViewById(android.R.id.list);
         listView.setAdapter(mListViewAdapter);
 
@@ -69,19 +74,31 @@ public class MainActivity extends AppCompatActivity {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                String packageName = mNotificationsList.get(position);
-                Intent launchIntent = getPackageManager().getLaunchIntentForPackage(packageName);
-                if (launchIntent != null) {
-                    startActivity(launchIntent);
+                String appName = mAppList.get(position);
+                String packageName = null;
+                for (String[] item : mSavedData) {
+                    if (item[1].equals(appName)) {
+                        packageName = item[0];
+                        break;
+                    }
                 }
-                mNotificationsList.remove(position);
+
+                if (packageName == null)
+                    return;
+
+                Intent launchIntent = getPackageManager().getLaunchIntentForPackage(packageName);
+                if (launchIntent != null)
+                    startActivity(launchIntent);
+                mSavedData.remove(position);
+                mAppList.remove(position);
                 mListViewAdapter.notifyDataSetChanged();
             }
         });
         findViewById(R.id.clearAllBtn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mNotificationsList.clear();
+                mSavedData.clear();
+                mAppList.clear();
                 mListViewAdapter.notifyDataSetChanged();
             }
         });
@@ -101,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             FileOutputStream fos = this.openFileOutput(SAVED_DATA_FILENAME, Context.MODE_PRIVATE);
             ObjectOutputStream oos = new ObjectOutputStream(fos);
-            oos.writeObject(mNotificationsList);
+            oos.writeObject(mSavedData);
             oos.close();
             fos.close();
         } catch (FileNotFoundException e) {
@@ -152,21 +169,19 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             String commandType = intent.getStringExtra(getString(R.string.COMMAND));
-            if (commandType.equals(getString(R.string.RESULT_DISPLAY))) {
-                String toDisplay = intent.getStringExtra(getString(R.string.DATA));
-                Snackbar.make(findViewById(R.id.toolbar), toDisplay, Snackbar.LENGTH_LONG)
-                    .setAction("Action", null)
-                    .show();
-            } else if (commandType.equals(ADD_NOTIFICATION)) {
+            if (commandType.equals(ADD_NOTIFICATION)) {
                 // TODO optimize when app is currently foreground; below assumes it's in background
                 // http://stackoverflow.com/questions/5504632/how-can-i-tell-if-android-app-is-running-in-the-foreground
                 // renew adapter with list from file
                 try {
-                    ObjectInputStream ois = new ObjectInputStream(context.openFileInput(SAVED_DATA_FILENAME));
-                    List<String> savedNotifications = (List)ois.readObject();
                     // TODO is there a more optimal way?
-                    mNotificationsList.clear();
-                    mNotificationsList.addAll(savedNotifications);
+                    ObjectInputStream ois = new ObjectInputStream(context.openFileInput(SAVED_DATA_FILENAME));
+                    mSavedData = (List)ois.readObject();
+
+                    mAppList.clear();
+                    for (String[] item : mSavedData) {
+                        mAppList.add(item[1]);  // { packageName, appName }
+                    }
                     mListViewAdapter.notifyDataSetChanged();
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
@@ -175,6 +190,11 @@ public class MainActivity extends AppCompatActivity {
                 } catch (ClassNotFoundException e) {
                     e.printStackTrace();
                 }
+            } else if (commandType.equals(getString(R.string.RESULT_DISPLAY))) {
+                String toDisplay = intent.getStringExtra(DATA);
+                Snackbar.make(findViewById(R.id.toolbar), toDisplay, Snackbar.LENGTH_LONG)
+                        .setAction("Action", null)
+                        .show();
             }
         }
     }
