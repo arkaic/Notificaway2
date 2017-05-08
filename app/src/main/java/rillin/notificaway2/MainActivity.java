@@ -65,7 +65,8 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.clearAllBtn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                broadcastToService(getString(R.string.CLEAR_ALL));
+                mNotificationsList.clear();
+                mListViewAdapter.notifyDataSetChanged();
             }
         });
         findViewById(R.id.testStatusBtn).setOnClickListener(new View.OnClickListener() {
@@ -141,8 +142,23 @@ public class MainActivity extends AppCompatActivity {
                     .setAction("Action", null)
                     .show();
             } else if (commandType.equals(ADD_NOTIFICATION)) {
-                mNotificationsList.add(intent.getStringExtra(DATA));
-                mListViewAdapter.notifyDataSetChanged();
+                // TODO optimize when app is currently foreground; below assumes it's in background
+                // http://stackoverflow.com/questions/5504632/how-can-i-tell-if-android-app-is-running-in-the-foreground
+                // renew adapter with list from file
+                try {
+                    ObjectInputStream ois = new ObjectInputStream(context.openFileInput(SAVED_DATA_FILENAME));
+                    List<String> savedNotifications = (List)ois.readObject();
+                    // TODO is there a more optimal way?
+                    mNotificationsList.clear();
+                    mNotificationsList.addAll(savedNotifications);
+                    mListViewAdapter.notifyDataSetChanged();
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }

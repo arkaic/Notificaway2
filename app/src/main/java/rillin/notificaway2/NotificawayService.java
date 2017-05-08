@@ -8,12 +8,22 @@ import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.support.v4.app.NotificationManagerCompat;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.List;
+
 /** rihllin 5/2017. */
 
 public class NotificawayService extends NotificationListenerService {
 
     private NotificawayServiceReceiver receiver;
     private String packageName = this.getClass().getPackage().getName();
+
+    private String SAVED_DATA_FILENAME = "saveddata.ser";
 
     @Override
     public void onCreate() {
@@ -39,6 +49,37 @@ public class NotificawayService extends NotificationListenerService {
     public void onNotificationPosted(StatusBarNotification sbn) {
         // TODO copy notification data and add to list
         // Note: need to reset Notif access on every build&run
+
+        List<String> notificationsList = null;
+        try {
+            ObjectInputStream ois = new ObjectInputStream(this.openFileInput(SAVED_DATA_FILENAME));
+            notificationsList = (List)ois.readObject();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        if (notificationsList == null) {
+            notificationsList = new ArrayList<>();
+        }
+
+        notificationsList.add(sbn.getPackageName());
+
+        try {
+            FileOutputStream fos = this.openFileOutput(SAVED_DATA_FILENAME, Context.MODE_PRIVATE);
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            oos.writeObject(notificationsList);
+            oos.close();
+            fos.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         broadcastToMain(getString(R.string.ADD_NOTIFICATION), sbn.getPackageName());
         this.cancelAllNotifications();
     }
