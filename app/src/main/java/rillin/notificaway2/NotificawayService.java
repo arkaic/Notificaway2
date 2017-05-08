@@ -57,6 +57,7 @@ public class NotificawayService extends NotificationListenerService {
             if (savedData == null)
                 savedData = new ArrayList<>();
 
+            // retrieve app name and store into savedData uniquely
             PackageManager packageManager= getApplicationContext().getPackageManager();
             String appName = (String)packageManager.getApplicationLabel(
                 packageManager.getApplicationInfo(sbn.getPackageName(), PackageManager.GET_META_DATA)
@@ -71,7 +72,7 @@ public class NotificawayService extends NotificationListenerService {
             if (!dataExists)
                 savedData.add(dataToAdd);
 
-            // write back to file
+            // write savedData back into file
             FileOutputStream fos = this.openFileOutput(SAVED_DATA_FILENAME, Context.MODE_PRIVATE);
             ObjectOutputStream oos = new ObjectOutputStream(fos);
             oos.writeObject(savedData);

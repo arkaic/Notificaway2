@@ -170,14 +170,14 @@ public class MainActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             String commandType = intent.getStringExtra(getString(R.string.COMMAND));
             if (commandType.equals(ADD_NOTIFICATION)) {
-                // TODO optimize when app is currently foreground; below assumes it's in background
-                // http://stackoverflow.com/questions/5504632/how-can-i-tell-if-android-app-is-running-in-the-foreground
-                // renew adapter with list from file
+                // receiving service's broadcast after intercepting a notification
                 try {
-                    // TODO is there a more optimal way?
+                    // TODO optimize when app is currently foreground; below assumes it's in background
+                    // http://stackoverflow.com/questions/5504632/how-can-i-tell-if-android-app-is-running-in-the-foreground
                     ObjectInputStream ois = new ObjectInputStream(context.openFileInput(SAVED_DATA_FILENAME));
                     mSavedData = (List)ois.readObject();
 
+                    // renew adapter's list
                     mAppList.clear();
                     for (String[] item : mSavedData) {
                         mAppList.add(item[1]);  // { packageName, appName }
