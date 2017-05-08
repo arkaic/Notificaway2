@@ -12,6 +12,8 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -23,6 +25,16 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        // init list adapter
+        String testStringArray[] = { "Telegram", "Hangouts", "GroupMe", "Snapchat", "Facebook",
+                "Twitter", "Kindle", "Calculator", "Phone", "Contacts", "Slack", "Evernote", "Keep"
+        };
+        ((ListView)findViewById(android.R.id.list)).setAdapter(new ArrayAdapter<>(
+            this,
+            android.R.layout.simple_list_item_1,
+            testStringArray
+        ));
 
         // set up intent broadcast receiving
         receiver = new NotificationReceiver();
