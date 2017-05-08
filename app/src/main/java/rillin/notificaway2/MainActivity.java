@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -15,9 +14,23 @@ import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity {
 
-    private NotificationReceiver receiver;
+    private NotificationReceiver mReceiver;
+    private ArrayAdapter<String> mListViewAdapter;
+    private List<String> mNotificationsList = new ArrayList<>();
+
+    private String SAVED_DATA_FILENAME = "saveddata.ser";
+    private String DATA;
+    private String ADD_NOTIFICATION;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,33 +39,39 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        // init list adapter
-        String testStringArray[] = { "Telegram", "Hangouts", "GroupMe", "Snapchat", "Facebook",
-                "Twitter", "Kindle", "Calculator", "Phone", "Contacts", "Slack", "Evernote", "Keep"
-        };
-        ((ListView)findViewById(android.R.id.list)).setAdapter(new ArrayAdapter<>(
-            this,
-            android.R.layout.simple_list_item_1,
-            testStringArray
-        ));
+        // CONSTANTS TODO better way of doing this?
+        DATA = getString(R.string.DATA);
+        ADD_NOTIFICATION = getString(R.string.ADD_NOTIFICATION);
+
+        try {
+            ObjectInputStream ois = new ObjectInputStream(this.openFileInput(SAVED_DATA_FILENAME));
+            mNotificationsList = (List)ois.readObject();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) { /**/ }
+
+        mListViewAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, mNotificationsList);
+        ((ListView)findViewById(android.R.id.list)).setAdapter(mListViewAdapter);
 
         // set up intent broadcast receiving
-        receiver = new NotificationReceiver();
+        mReceiver = new NotificationReceiver();
         IntentFilter filter = new IntentFilter();
         filter.addAction(getString(R.string.MAIN_ACTIVITY));
-        registerReceiver(receiver, filter);
+        registerReceiver(mReceiver, filter);
 
         // button event handlers
         findViewById(R.id.clearAllBtn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                commandTheListener(getString(R.string.CLEAR_ALL));
+                broadcastToService(getString(R.string.CLEAR_ALL));
             }
         });
         findViewById(R.id.testStatusBtn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                commandTheListener(getString(R.string.NOTIF_STATUS));
+                broadcastToService(getString(R.string.NOTIF_STATUS));
             }
         });
 
@@ -60,9 +79,25 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onPause() {
+        super.onPause();
+        try {
+            FileOutputStream fos = this.openFileOutput(SAVED_DATA_FILENAME, Context.MODE_PRIVATE);
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            oos.writeObject(mNotificationsList);
+            oos.close();
+            fos.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(receiver);
+        unregisterReceiver(mReceiver);
     }
 
     /** autogenned */
@@ -89,20 +124,26 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void commandTheListener(String commandValue) {
-        Intent i = new Intent(getString(R.string.NOTIFICAWAY_SERVICE));
+    private void broadcastToService(String commandValue) {
+        Intent i = new Intent(getString(R.string.NOTIFICAWAY_SERVICE));  // todo put into privates
         i.putExtra(getString(R.string.COMMAND), commandValue);
         sendBroadcast(i);
     }
 
-    /** Receives message from other app components */
+    /** Receives message from other app components (eg NotificawayService) */
     class NotificationReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            String toDisplay = intent.getStringExtra(getString(R.string.RESULT_DISPLAY));
-            Snackbar.make(findViewById(R.id.toolbar), toDisplay, Snackbar.LENGTH_LONG)
-                .setAction("Action", null)
-                .show();
+            String commandType = intent.getStringExtra(getString(R.string.COMMAND));
+            if (commandType.equals(getString(R.string.RESULT_DISPLAY))) {
+                String toDisplay = intent.getStringExtra(getString(R.string.DATA));
+                Snackbar.make(findViewById(R.id.toolbar), toDisplay, Snackbar.LENGTH_LONG)
+                    .setAction("Action", null)
+                    .show();
+            } else if (commandType.equals(ADD_NOTIFICATION)) {
+                mNotificationsList.add(intent.getStringExtra(DATA));
+                mListViewAdapter.notifyDataSetChanged();
+            }
         }
     }
 }

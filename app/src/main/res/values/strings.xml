@@ -9,9 +9,11 @@
 
     <!--Intent Key Extras-->
     <string name="COMMAND">command</string>
-    <string name="RESULT_DISPLAY">result_display</string>
+    <string name="DATA">data</string>
 
-    <!--Intent Value Extras-->
+    <!--Intent Value Extras for Command Types)-->
+    <string name="RESULT_DISPLAY">result_display</string>
     <string name="NOTIF_STATUS">notif_status</string>
     <string name="CLEAR_ALL">clear_all</string>
+    <string name="ADD_NOTIFICATION">add_notification</string>
 </resources>

@@ -37,8 +37,9 @@ public class NotificawayService extends NotificationListenerService {
 
     @Override
     public void onNotificationPosted(StatusBarNotification sbn) {
-        // TODO copy notification data
+        // TODO copy notification data and add to list
         // Note: need to reset Notif access on every build&run
+        broadcastToMain(getString(R.string.ADD_NOTIFICATION), sbn.getPackageName());
         this.cancelAllNotifications();
     }
 
@@ -50,9 +51,10 @@ public class NotificawayService extends NotificationListenerService {
         return NotificationManagerCompat.getEnabledListenerPackages(this).contains(packageName);
     }
 
-    private void answerTheCommander(String msg) {
+    private void broadcastToMain(String commandType, String val) {
         Intent i = new Intent(getString(R.string.MAIN_ACTIVITY));
-        i.putExtra(getString(R.string.RESULT_DISPLAY), msg);
+        i.putExtra(getString(R.string.COMMAND), commandType);
+        i.putExtra(getString(R.string.DATA), val);
         sendBroadcast(i);
     }
 
@@ -70,7 +72,7 @@ public class NotificawayService extends NotificationListenerService {
                         ? "Notifications is null, try re-enabling access to notifications?"
                         : notifs.length + " notifications";
                 }
-                answerTheCommander(msg);
+                broadcastToMain(getString(R.string.RESULT_DISPLAY), msg);
             }
         }
     }
