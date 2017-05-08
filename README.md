@@ -1,5 +1,7 @@
 # Notificaway2
 
-For those of you who're easily distracted by the upper left banner of notifications in Android whenever you open your phone to check something trivial like the weather. This is an app that collects all incoming notifications into its own list display and clears that banner.
+For those of you on Android, have you ever wanted to hide all those notifications on the upper left or move them somewhere else? Ever get distracted for ten minutes reading all your notifications, forgetting that originally you opened the phone to check the weather?
 
-You could always turn off your notifications, but if you have numerous apps you keep tabs on, it's annoying to launch them one by one to check for updates.
+The usual solution is that you can just turn off your notifications, but if you have numerous apps you keep tabs on, it's annoying to launch them one by one to check for updates.
+
+So I wrote an app that moves all those incoming notifications into itself and clears out the upper left corner. Whenever you need to check your notifications, you can just open Notificaway and see the list of apps vying for your attention.
