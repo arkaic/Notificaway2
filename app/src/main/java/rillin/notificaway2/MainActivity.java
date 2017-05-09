@@ -30,9 +30,12 @@ public class MainActivity extends AppCompatActivity {
     private List<String[]> mSavedData = new ArrayList<>();
     private List<String> mAppList = new ArrayList<>();
 
+    // CONSTANTS
     private String SAVED_DATA_FILENAME = "saveddata.ser";
     private String DATA;
     private String ADD_NOTIFICATION;
+    private String RESULT_DISPLAY;
+    private String COMMAND;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,21 +44,14 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        // CONSTANTS TODO better way of doing this?
+        // Initialize CONSTANTS TODO better way of doing this?
         DATA = getString(R.string.DATA);
         ADD_NOTIFICATION = getString(R.string.ADD_NOTIFICATION);
+        RESULT_DISPLAY = getString(R.string.RESULT_DISPLAY);
+        COMMAND = getString(R.string.COMMAND);
 
         // deserialize list from file
-        try {
-            ObjectInputStream ois = new ObjectInputStream(this.openFileInput(SAVED_DATA_FILENAME));
-            mSavedData = (List)ois.readObject();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
+        mSavedData = readSavedDataFromFile();
         mAppList.clear();
         for (String[] item : mSavedData) {
             mAppList.add(item[1]);  // { packageName, appName }
@@ -98,6 +94,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 mSavedData.clear();
+                writeSavedDataToFile();
                 mAppList.clear();
                 mListViewAdapter.notifyDataSetChanged();
             }
@@ -115,17 +112,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onPause() {
         super.onPause();
-        try {
-            FileOutputStream fos = this.openFileOutput(SAVED_DATA_FILENAME, Context.MODE_PRIVATE);
-            ObjectOutputStream oos = new ObjectOutputStream(fos);
-            oos.writeObject(mSavedData);
-            oos.close();
-            fos.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        writeSavedDataToFile();
     }
 
     @Override
@@ -158,9 +145,43 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    private List<String[]> readSavedDataFromFile() {
+        List<String[]> savedData = null;
+        try {
+            // TODO optimize when app is currently foreground; below assumes it's in background
+            // http://stackoverflow.com/questions/5504632/how-can-i-tell-if-android-app-is-running-in-the-foreground
+            ObjectInputStream ois = new ObjectInputStream(this.openFileInput(SAVED_DATA_FILENAME));
+            savedData = (List)ois.readObject();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            if (savedData == null)
+                savedData = new ArrayList<>();
+            return savedData;
+        }
+    }
+
+    private void writeSavedDataToFile() {
+        try {
+            FileOutputStream fos = this.openFileOutput(SAVED_DATA_FILENAME, Context.MODE_PRIVATE);
+            ObjectOutputStream oos = new ObjectOutputStream(fos);
+            oos.writeObject(mSavedData);
+            oos.close();
+            fos.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void broadcastToService(String commandValue) {
         Intent i = new Intent(getString(R.string.NOTIFICAWAY_SERVICE));  // todo put into privates
-        i.putExtra(getString(R.string.COMMAND), commandValue);
+        i.putExtra(COMMAND, commandValue);
         sendBroadcast(i);
     }
 
@@ -168,33 +189,22 @@ public class MainActivity extends AppCompatActivity {
     class NotificationReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            String commandType = intent.getStringExtra(getString(R.string.COMMAND));
+            String commandType = intent.getStringExtra(COMMAND);
             if (commandType.equals(ADD_NOTIFICATION)) {
                 // receiving service's broadcast after intercepting a notification
-                try {
-                    // TODO optimize when app is currently foreground; below assumes it's in background
-                    // http://stackoverflow.com/questions/5504632/how-can-i-tell-if-android-app-is-running-in-the-foreground
-                    ObjectInputStream ois = new ObjectInputStream(context.openFileInput(SAVED_DATA_FILENAME));
-                    mSavedData = (List)ois.readObject();
+                mSavedData = readSavedDataFromFile();
 
-                    // renew adapter's list
-                    mAppList.clear();
-                    for (String[] item : mSavedData) {
-                        mAppList.add(item[1]);  // { packageName, appName }
-                    }
-                    mListViewAdapter.notifyDataSetChanged();
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
+                // renew adapter's list
+                mAppList.clear();
+                for (String[] item : mSavedData) {
+                    mAppList.add(item[1]);  // item={packageName, appName}
                 }
-            } else if (commandType.equals(getString(R.string.RESULT_DISPLAY))) {
+                mListViewAdapter.notifyDataSetChanged();
+            } else if (commandType.equals(RESULT_DISPLAY)) {
                 String toDisplay = intent.getStringExtra(DATA);
                 Snackbar.make(findViewById(R.id.toolbar), toDisplay, Snackbar.LENGTH_LONG)
-                        .setAction("Action", null)
-                        .show();
+                    .setAction("Action", null)
+                    .show();
             }
         }
     }
