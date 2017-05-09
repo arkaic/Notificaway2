@@ -59,7 +59,6 @@ public class NotificawayService extends NotificationListenerService {
 
     @Override
     public void onNotificationPosted(StatusBarNotification sbn) {
-        // TODO copy notification data and add to list
         // Note: need to reset Notif access on every build&run
         try {
             // read file and deserialize list from it
@@ -102,6 +101,11 @@ public class NotificawayService extends NotificationListenerService {
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public void onNotificationRemoved (StatusBarNotification sbn) {
+        // TODO
     }
 
     private boolean hasNotificationAccess() {
