@@ -35,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     private String DATA;
     private String ADD_NOTIFICATION;
     private String RESULT_DISPLAY;
+    private String NOTIF_STATUS;
     private String COMMAND;
 
     @Override
@@ -48,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
         DATA = getString(R.string.DATA);
         ADD_NOTIFICATION = getString(R.string.ADD_NOTIFICATION);
         RESULT_DISPLAY = getString(R.string.RESULT_DISPLAY);
+        NOTIF_STATUS = getString(R.string.NOTIF_STATUS);
         COMMAND = getString(R.string.COMMAND);
 
         // deserialize list from file
@@ -102,11 +104,18 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.testStatusBtn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                broadcastToService(getString(R.string.NOTIF_STATUS));
+                broadcastToService(NOTIF_STATUS);
             }
         });
 
+        broadcastToService(NOTIF_STATUS);
         startService(new Intent(this, NotificawayService.class));
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        broadcastToService(NOTIF_STATUS);
     }
 
     @Override

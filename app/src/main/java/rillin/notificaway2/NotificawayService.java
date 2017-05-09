@@ -25,13 +25,24 @@ public class NotificawayService extends NotificationListenerService {
     private String mPackageName = this.getClass().getPackage().getName();
 
     private String SAVED_DATA_FILENAME = "saveddata.ser";
+    private String DATA;
+    private String ADD_NOTIFICATION;
+    private String RESULT_DISPLAY;
+    private String NOTIF_STATUS;
+    private String COMMAND;
+    private String MAIN_ACTIVITY;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        if (!hasNotificationAccess()) {
-            // todo prompt user to give notification access to this service
-        }
+
+        // Initialize CONSTANTS TODO better way of doing this?
+        DATA = getString(R.string.DATA);
+        ADD_NOTIFICATION = getString(R.string.ADD_NOTIFICATION);
+        RESULT_DISPLAY = getString(R.string.RESULT_DISPLAY);
+        NOTIF_STATUS = getString(R.string.NOTIF_STATUS);
+        COMMAND = getString(R.string.COMMAND);
+        MAIN_ACTIVITY = getString(R.string.MAIN_ACTIVITY);
 
         // set up intent broadcast receiving
         receiver = new NotificawayServiceReceiver();
@@ -80,7 +91,7 @@ public class NotificawayService extends NotificationListenerService {
             fos.close();
 
             // broadcast and clear the notification
-            broadcastToMain(getString(R.string.ADD_NOTIFICATION), sbn.getPackageName());
+            broadcastToMain(ADD_NOTIFICATION, sbn.getPackageName());
             this.cancelNotification(sbn.getKey());
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -98,27 +109,25 @@ public class NotificawayService extends NotificationListenerService {
     }
 
     private void broadcastToMain(String commandType, String val) {
-        Intent i = new Intent(getString(R.string.MAIN_ACTIVITY));
-        i.putExtra(getString(R.string.COMMAND), commandType);
-        i.putExtra(getString(R.string.DATA), val);
+        Intent i = new Intent(MAIN_ACTIVITY);
+        i.putExtra(COMMAND, commandType);
+        i.putExtra(DATA, val);
         sendBroadcast(i);
     }
 
     class NotificawayServiceReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            String commandVal = intent.getStringExtra(getString(R.string.COMMAND));
-            if (commandVal.equals(getString(R.string.NOTIF_STATUS))) {
-                String msg;
+            String commandVal = intent.getStringExtra(COMMAND);
+            if (commandVal.equals(NOTIF_STATUS)) {
+                String directions = "(Settings > Apps > [top-right gear icon] > Special Access > Notification Access)";
                 if (!hasNotificationAccess()) {
-                    msg = "Has no notification access";
+                    broadcastToMain(RESULT_DISPLAY, "No notification access, please enable: "+directions);
                 } else {
-                    StatusBarNotification[] notifs = getActiveNotifications();
-                    msg = (notifs == null)
-                        ? "Notifications is null, try re-enabling access to notifications?"
-                        : notifs.length + " notifications";
+                    if (getActiveNotifications() == null) {
+                        broadcastToMain(RESULT_DISPLAY, "Please re-enable Notification Access: "+directions);
+                    }
                 }
-                broadcastToMain(getString(R.string.RESULT_DISPLAY), msg);
             }
         }
     }
