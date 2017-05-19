@@ -28,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
     private NotificationReceiver mReceiver;
     private ArrayAdapter<String> mListViewAdapter;
     private List<String[]> mSavedData = new ArrayList<>();
-    private List<String> mAppList = new ArrayList<>();
+    private List<String> mAppList = new ArrayList<>();  // registered with adapter
 
     // CONSTANTS
     private String SAVED_DATA_FILENAME = "saveddata.ser";

@@ -15,14 +15,13 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /** rihllin 5/2017. */
 
 public class NotificawayService extends NotificationListenerService {
-
-    private NotificawayServiceReceiver receiver;
-    private String mPackageName = this.getClass().getPackage().getName();
 
     private String SAVED_DATA_FILENAME = "saveddata.ser";
     private String DATA;
@@ -32,9 +31,19 @@ public class NotificawayService extends NotificationListenerService {
     private String COMMAND;
     private String MAIN_ACTIVITY;
 
+    private Set<String> mAppFilter = new HashSet<>();  // notifications to keep
+
+    private NotificawayServiceReceiver receiver;
+    private String mPackageName = this.getClass().getPackage().getName();
+
     @Override
     public void onCreate() {
         super.onCreate();
+
+        // pre-determined notifications to filter
+        mAppFilter.add("Android System");
+        mAppFilter.add("Maps");
+        mAppFilter.add("Internet Speed Meter Lite");
 
         // Initialize CONSTANTS TODO better way of doing this?
         DATA = getString(R.string.DATA);
@@ -61,18 +70,22 @@ public class NotificawayService extends NotificationListenerService {
     public void onNotificationPosted(StatusBarNotification sbn) {
         // Note: need to reset Notif access on every build&run
         try {
+            // retrieve app name and store into savedData uniquely
+            PackageManager packageManager = getApplicationContext().getPackageManager();
+            String packageName = sbn.getPackageName();
+            String appName = (String) packageManager.getApplicationLabel(
+                packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
+            );
+
+            if (mAppFilter.contains(appName))
+                return;
+
             // read file and deserialize list from it
             ObjectInputStream ois = new ObjectInputStream(this.openFileInput(SAVED_DATA_FILENAME));
             List<String[]> savedData = (List)ois.readObject();
             if (savedData == null)
                 savedData = new ArrayList<>();
-
-            // retrieve app name and store into savedData uniquely
-            PackageManager packageManager= getApplicationContext().getPackageManager();
-            String appName = (String)packageManager.getApplicationLabel(
-                packageManager.getApplicationInfo(sbn.getPackageName(), PackageManager.GET_META_DATA)
-            );
-            String[] dataToAdd = { sbn.getPackageName(), appName };
+            String[] dataToAdd = { packageName, appName };
             boolean dataExists = false;
             for (String[] item : savedData) {
                 dataExists = item[0].equals(dataToAdd[0]);
@@ -90,8 +103,8 @@ public class NotificawayService extends NotificationListenerService {
             fos.close();
 
             // broadcast and clear the notification
-            broadcastToMain(ADD_NOTIFICATION, sbn.getPackageName());
-            this.cancelNotification(sbn.getKey());
+            broadcastToMain(ADD_NOTIFICATION, packageName);
+            cancelNotification(sbn.getKey());
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
