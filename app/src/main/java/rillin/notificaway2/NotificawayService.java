@@ -44,6 +44,7 @@ public class NotificawayService extends NotificationListenerService {
         mAppFilter.add("Android System");
         mAppFilter.add("Maps");
         mAppFilter.add("Internet Speed Meter Lite");
+        mAppFilter.add("Clock");
 
         // Initialize CONSTANTS TODO better way of doing this?
         DATA = getString(R.string.DATA);
